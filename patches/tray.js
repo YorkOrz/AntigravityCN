@@ -38,19 +38,50 @@ exports.updateTrayAgentCount = updateTrayAgentCount;
 const electron_1 = require("electron");
 const path = __importStar(require("path"));
 const utils_1 = require("./utils");
-// Keep tray as a global variable to prevent it from being garbage collected.
+
 let tray = null;
 let contextMenu = null;
-/**
- * Creates a system tray icon with a context menu to focus a window or quit the app.
- *
- * For macOS it uses a template image to automatically handle light/dark mode.
- * Other platforms use the normal app icon.
- */
+
+const TRAY_DICT = {
+    'No agents running': '暂无正在运行的智能体',
+    'Quit': '退出',
+    'New Window': '新建窗口',
+    'Documentation': '官方文档',
+    'Check for Updates': '检查更新',
+    'Cancel': '取消',
+};
+
+function translateLabel(label) {
+    if (!label || typeof label !== 'string') return label;
+    const trimmed = label.trim();
+    if (TRAY_DICT[trimmed]) return TRAY_DICT[trimmed];
+    if (trimmed.startsWith('Open ')) {
+        return '打开 ' + trimmed.slice(5);
+    }
+    if (trimmed.endsWith(' agent running')) {
+        return trimmed.replace(' agent running', ' 个智能体正在运行');
+    }
+    if (trimmed.endsWith(' agents running')) {
+        return trimmed.replace(' agents running', ' 个智能体正在运行');
+    }
+    return label;
+}
+
+function translateActions(items) {
+    if (!Array.isArray(items)) return items;
+    return items.map((item) => {
+        const copy = Object.assign({}, item);
+        if (copy.label) {
+            copy.label = translateLabel(copy.label);
+        }
+        if (copy.submenu) {
+            copy.submenu = translateActions(copy.submenu);
+        }
+        return copy;
+    });
+}
+
 function createTray(actions) {
-    // On macOS use a template image (auto-inverts for dark/light menu bar).
-    // Otherwise use a full-color icon since template images are unsupported
-    // and a solid-black glyph can be invisible on dark panels.
     const iconFile = (0, utils_1.isMacOS)() ? 'trayTemplate.png' : 'icon.png';
     const icon = electron_1.nativeImage.createFromPath(path.join(__dirname, '..', iconFile));
     if ((0, utils_1.isMacOS)()) {
@@ -58,19 +89,16 @@ function createTray(actions) {
     }
     tray = new electron_1.Tray(icon);
     tray.setToolTip(electron_1.app.getName());
-    contextMenu = electron_1.Menu.buildFromTemplate(actions);
+    const translatedActions = translateActions(actions);
+    contextMenu = electron_1.Menu.buildFromTemplate(translatedActions);
     tray.setContextMenu(contextMenu);
 }
-/**
- * Updates the active agents count in the tray menu.
- */
+
 function updateTrayAgentCount(count) {
     if (tray && contextMenu) {
         const countItem = contextMenu.items.find((item) => item.id === 'running-agents');
         if (countItem) {
-            countItem.label =
-                (count > 0 ? `${count} 个` : '无') +
-                    '智能体正在运行';
+            countItem.label = count > 0 ? `${count} 个智能体正在运行` : '暂无正在运行的智能体';
             tray.setContextMenu(contextMenu);
         }
     }
