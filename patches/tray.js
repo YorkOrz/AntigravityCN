@@ -39,10 +39,14 @@ const electron_1 = require("electron");
 const path = __importStar(require("path"));
 const utils_1 = require("./utils");
 
+// Keep tray as a global variable to prevent it from being garbage collected.
 let tray = null;
 let contextMenu = null;
 
-const TRAY_DICT = {
+// ============================================================================
+// 托盘菜单本地化辅助模块
+// ============================================================================
+const TRAY_I18N_MAP = {
     'No agents running': '暂无正在运行的智能体',
     'Quit': '退出',
     'New Window': '新建窗口',
@@ -51,10 +55,13 @@ const TRAY_DICT = {
     'Cancel': '取消',
 };
 
-function translateLabel(label) {
+/**
+ * 转换托盘单条菜单项的文本标签
+ */
+function translateTrayLabel(label) {
     if (!label || typeof label !== 'string') return label;
     const trimmed = label.trim();
-    if (TRAY_DICT[trimmed]) return TRAY_DICT[trimmed];
+    if (TRAY_I18N_MAP[trimmed]) return TRAY_I18N_MAP[trimmed];
     if (trimmed.startsWith('Open ')) {
         return '打开 ' + trimmed.slice(5);
     }
@@ -67,21 +74,33 @@ function translateLabel(label) {
     return label;
 }
 
-function translateActions(items) {
+/**
+ * 递归遍历并汉化托盘上下文菜单配置列表
+ */
+function translateTrayActions(items) {
     if (!Array.isArray(items)) return items;
     return items.map((item) => {
         const copy = Object.assign({}, item);
         if (copy.label) {
-            copy.label = translateLabel(copy.label);
+            copy.label = translateTrayLabel(copy.label);
         }
         if (copy.submenu) {
-            copy.submenu = translateActions(copy.submenu);
+            copy.submenu = translateTrayActions(copy.submenu);
         }
         return copy;
     });
 }
 
+/**
+ * Creates a system tray icon with a context menu to focus a window or quit the app.
+ *
+ * For macOS it uses a template image to automatically handle light/dark mode.
+ * Other platforms use the normal app icon.
+ */
 function createTray(actions) {
+    // On macOS use a template image (auto-inverts for dark/light menu bar).
+    // Otherwise use a full-color icon since template images are unsupported
+    // and a solid-black glyph can be invisible on dark panels.
     const iconFile = (0, utils_1.isMacOS)() ? 'trayTemplate.png' : 'icon.png';
     const icon = electron_1.nativeImage.createFromPath(path.join(__dirname, '..', iconFile));
     if ((0, utils_1.isMacOS)()) {
@@ -89,11 +108,16 @@ function createTray(actions) {
     }
     tray = new electron_1.Tray(icon);
     tray.setToolTip(electron_1.app.getName());
-    const translatedActions = translateActions(actions);
-    contextMenu = electron_1.Menu.buildFromTemplate(translatedActions);
+
+    // 注入汉化后的上下文菜单配置
+    const localizedActions = translateTrayActions(actions);
+    contextMenu = electron_1.Menu.buildFromTemplate(localizedActions);
     tray.setContextMenu(contextMenu);
 }
 
+/**
+ * Updates the active agents count in the tray menu.
+ */
 function updateTrayAgentCount(count) {
     if (tray && contextMenu) {
         const countItem = contextMenu.items.find((item) => item.id === 'running-agents');
