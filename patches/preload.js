@@ -137,10 +137,14 @@ function injectedMainWorldScript(DICT) {
     if (window.__AGY_CN_INITIALIZED__) return;
     window.__AGY_CN_INITIALIZED__ = true;
 
-    // 构建小写快速索引表以支持不区分大小写匹配
+    // 构建小写快速索引表以支持多单词短语不区分大小写匹配
+    // 关键安全原则：单单词（无空格，如 Update、Select、Window、Delete 等）绝不加入小写模糊字典！
+    // 这样既能保证 UI 按钮/标签精准匹配（如 "Update" -> "更新"），又能彻底避免代码中的 SQL 语句（UPDATE/SELECT）或变量名（window/update）被误替换！
     const DICT_LOWER = {};
     for (const k of Object.keys(DICT)) {
-        DICT_LOWER[k.toLowerCase()] = DICT[k];
+        if (k.includes(' ')) {
+            DICT_LOWER[k.toLowerCase()] = DICT[k];
+        }
     }
 
     function translateText(str) {
@@ -153,9 +157,9 @@ function injectedMainWorldScript(DICT) {
             return str.replace(trimmed, DICT[trimmed]);
         }
 
-        // 1.1 不区分大小写词典匹配
+        // 1.1 多单词短语不区分大小写词典匹配
         const trimmedLower = trimmed.toLowerCase();
-        if (DICT_LOWER[trimmedLower]) {
+        if (trimmed.includes(' ') && DICT_LOWER[trimmedLower]) {
             return str.replace(trimmed, DICT_LOWER[trimmedLower]);
         }
 
@@ -165,21 +169,21 @@ function injectedMainWorldScript(DICT) {
             return str.replace(trimmed, DICT[normalized]);
         }
         const normalizedLower = normalized.toLowerCase();
-        if (DICT_LOWER[normalizedLower]) {
+        if (normalized.includes(' ') && DICT_LOWER[normalizedLower]) {
             return str.replace(trimmed, DICT_LOWER[normalizedLower]);
         }
 
         // 1.1.5.5 末尾标点智能降级匹配（句号 . / 冒号 :）
         if (trimmed.endsWith('.') && !trimmed.endsWith('..')) {
             const noDot = trimmed.slice(0, -1).trim();
-            const trans = DICT[noDot] || DICT_LOWER[noDot.toLowerCase()];
+            const trans = DICT[noDot] || (noDot.includes(' ') ? DICT_LOWER[noDot.toLowerCase()] : undefined);
             if (trans) {
                 const transClean = trans.replace(/[.。]+$/, '');
                 return str.replace(trimmed, transClean + '。');
             }
         } else {
             const withDot = trimmed + '.';
-            const trans = DICT[withDot] || DICT_LOWER[withDot.toLowerCase()];
+            const trans = DICT[withDot] || (withDot.includes(' ') ? DICT_LOWER[withDot.toLowerCase()] : undefined);
             if (trans) {
                 const transClean = trans.replace(/[.。]+$/, '');
                 return str.replace(trimmed, transClean);
@@ -188,7 +192,7 @@ function injectedMainWorldScript(DICT) {
 
         if (trimmed.endsWith(':')) {
             const noColon = trimmed.slice(0, -1).trim();
-            const trans = DICT[noColon] || DICT_LOWER[noColon.toLowerCase()];
+            const trans = DICT[noColon] || (noColon.includes(' ') ? DICT_LOWER[noColon.toLowerCase()] : undefined);
             if (trans) {
                 const transClean = trans.replace(/[:：]+$/, '');
                 return str.replace(trimmed, transClean + '：');
@@ -376,16 +380,32 @@ function injectedMainWorldScript(DICT) {
 
     // 检查是否应跳过代码高亮与终端等节点
     function isCodeElement(type, props) {
-        if (type === 'code' || type === 'pre') return true;
+        if (typeof type === 'string') {
+            const t = type.toLowerCase();
+            if (t === 'code' || t === 'pre' || t === 'kbd' || t === 'samp' || t === 'var') return true;
+        } else if (typeof type === 'function' || (typeof type === 'object' && type !== null)) {
+            const name = type.displayName || type.name || '';
+            if (/code|syntax|highlighter|monaco|editor|diff|prism|terminal|xterm|shiki/i.test(name)) {
+                return true;
+            }
+        }
         if (props && typeof props === 'object') {
-            const cls = props.className || '';
+            const cls = String(props.className || props.class || '');
             if (typeof cls === 'string' && (
                 cls.includes('monaco') ||
                 cls.includes('prism') ||
                 cls.includes('xterm') ||
                 cls.includes('cm-editor') ||
+                cls.includes('cm-') ||
                 cls.includes('hljs') ||
-                cls.includes('diff-line-content')
+                cls.includes('diff-') ||
+                cls.includes('shiki') ||
+                cls.includes('token') ||
+                cls.includes('code-') ||
+                cls.includes('code_') ||
+                cls.includes('syntax') ||
+                cls.includes('font-mono') ||
+                cls.includes('terminal')
             )) {
                 return true;
             }
@@ -507,9 +527,21 @@ function injectedMainWorldScript(DICT) {
         }
     } catch (_) {}
 
+    function isNodeInsideCodeOrEditor(node) {
+        if (!node) return false;
+        const el = node.nodeType === 1 ? node : node.parentElement;
+        if (!el) return false;
+        if (el.closest) {
+            return Boolean(el.closest('pre, code, kbd, samp, var, textarea, input, [contenteditable="true"], [class*="code"], [class*="monaco"], [class*="prism"], [class*="xterm"], [class*="shiki"], [class*="hljs"], [class*="cm-"], [class*="syntax"], [class*="token"], [class*="terminal"], [class*="diff-line"]'));
+        }
+        return false;
+    }
+
     // DOM 辅助观察器：捕获非 React 虚拟 DOM 渲染的原生节点、编辑器占位符与动态 Tooltip
     function walkAndTranslate(node) {
         if (!node) return;
+        if (isNodeInsideCodeOrEditor(node)) return;
+
         if (node.nodeType === 3) { // Text node
             const val = node.nodeValue;
             if (val && val.trim()) {
@@ -551,6 +583,7 @@ function injectedMainWorldScript(DICT) {
                         walkAndTranslate(m.addedNodes[i]);
                     }
                 } else if (m.type === 'characterData') {
+                    if (isNodeInsideCodeOrEditor(m.target)) continue;
                     const val = m.target.nodeValue;
                     if (val && val.trim()) {
                         const trans = translateText(val);
@@ -559,6 +592,7 @@ function injectedMainWorldScript(DICT) {
                         }
                     }
                 } else if (m.type === 'attributes') {
+                    if (isNodeInsideCodeOrEditor(m.target)) continue;
                     const attr = m.attributeName;
                     if (['placeholder', 'title', 'aria-label', 'data-tooltip', 'data-placeholder'].includes(attr)) {
                         const v = m.target.getAttribute(attr);
