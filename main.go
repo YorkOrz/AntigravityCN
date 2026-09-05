@@ -14,7 +14,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
-//go:embed all:frontend
+//go:embed all:frontend/dist
 var assets embed.FS
 
 //go:embed all:patches
@@ -76,7 +76,7 @@ func main() {
 		return
 	}
 
-	frontendFS, _ := fs.Sub(assets, "frontend")
+	frontendFS, _ := fs.Sub(assets, "frontend/dist")
 	if frontendFS == nil {
 		frontendFS = assets
 	}
@@ -90,7 +90,7 @@ func main() {
 		MinWidth:          720,
 		MinHeight:         540,
 		Frameless:         true,
-		BackgroundColour:  &options.RGBA{R: 11, G: 15, B: 25, A: 255},
+		BackgroundColour:  &options.RGBA{R: 15, G: 17, B: 21, A: 255},
 		AssetServer:       &assetserver.Options{Assets: frontendFS},
 		OnStartup:         app.startup,
 		Bind:              []interface{}{app},

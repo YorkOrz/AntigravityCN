@@ -1,4 +1,20 @@
+# Binaries
 AntigravityCN.exe
-build/bin
-__pycache__/
-*.pyc
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Wails / Build
+build/bin/
+frontend/dist/
+frontend/node_modules/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.backup
+*.bak
+*.temp_patched
