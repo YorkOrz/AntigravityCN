@@ -230,6 +230,7 @@ def apply_patch(custom_asar_path: Optional[str] = None) -> bool:
         ('ipcHandlers.js', 'dist/ipcHandlers.js'),
         ('loadingOverlay.js', 'dist/loadingOverlay.js'),
         ('updater.js', 'dist/updater.js'),
+        ('utils.js', 'dist/utils.js'),
         ('ideInstall/wizardHtml.js', 'dist/ideInstall/wizardHtml.js'),
     ]
 
