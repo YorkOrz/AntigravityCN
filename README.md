@@ -1,143 +1,128 @@
 # AntigravityCN
 
-> **Google Antigravity 桌面端全方位简体中文汉化工具（Windows 便携单文件版）**
+Google Antigravity 桌面客户端的简体中文汉化工具。生成 Windows 单文件便携版可执行程序，无需配置额外环境，开箱即用。
 
-基于 **Wails v2** 与 **纯 Go 语言 ASAR 解析引擎** 构建，无需安装 Node.js、npm 或 Python 等外部运行时，一键实现 Google Antigravity 客户端的深度全量简体中文本地化。
+<p align="left">
+  <img src="https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white" alt="Platform" />
+  <img src="https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white" alt="Go" />
+  <img src="https://img.shields.io/badge/Wails-v2-DF1B52?logo=wails&logoColor=white" alt="Wails" />
+  <img src="https://img.shields.io/badge/Frontend-Vue_3_+_TypeScript-4FC08D?logo=vuedotjs&logoColor=white" alt="Frontend" />
+  <img src="https://img.shields.io/badge/Localization-zh--CN-blue" alt="Localization" />
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
+</p>
 
----
+![AntigravityCN 软件界面预览](docs/app-preview.png)
 
-## 核心特性
+## 功能特点
 
-- **深度全量汉化**：全面覆盖原生顶部菜单栏、系统托盘与右键菜单、系统原生对话框、初始化向导，以及应用内 Web 界面（设置面板、智能体对话、代码 Diff 审查、MCP 管理、自定义规则与技能等）。
-- **双层注入与零闪烁**：在 Preload 与 Virtual DOM / 属性拦截层协同工作，实现底层动态无感替换，彻底杜绝界面加载闪烁与 React 重新渲染导致的回退问题。
-- **纯 Go 极速 ASAR 引擎**：内置自主实现的轻量级 ASAR 读写与重封引擎，秒级完成应用包解压、补丁装配与原子重打包。
-- **模块化词典系统**：内置 4 大核心领域划分的本地化词典（1,035+ 条完整术语），支持 Go Patcher 在内存中即时合并装配，具备大小写智能降级匹配机制。
-- **代码与数据安全隔离**：严格保护 Monaco Editor、Prism、CodeMirror、Highlight.js、xterm 终端、代码块（`pre` / `code`）及用户输入框内容，坚决杜绝误翻译污染代码与终端指令。
-- **一键安全备份与还原**：首次应用自动生成官方原版 `app.asar.backup` 备份文件，支持随时一键无损还原英文官方版本；自动检测并安全接管运行中的进程占用。
-- **便携与双模式支持**：提供现代化暗黑磨砂玻璃（Mica）图形界面（双击即用），同时提供完整灵活的 CLI 命令行静默调用能力以及免编译 Python 脚本。
-
----
+- **开箱即用**：提供单文件绿色版程序，内置汉化补丁与静态资源，无需安装 Node.js、Python 等外部依赖。
+- **自动检测与安全备份**：自动定位本地 Antigravity 安装目录（支持自定义路径）；首次汉化会自动生成官方原版备份（`app.asar.backup`），支持随时一键还原。
+- **界面与原生菜单汉化**：涵盖主界面、顶部菜单栏、系统托盘菜单以及工作区选择、WSL 配置等弹窗提示。
+- **防干扰内容保护**：在动态翻译界面时，自动跳过代码编辑器（如 Monaco 等）、终端容器、输入框、斜杠命令以及 AI 思考过程（Thinking）正文，避免污染代码与模型推理内容。
+- **缓存清理与快捷启动**：内置缓存清理功能，解决客户端更新或汉化后界面残留旧文案的问题，并支持直接启动 Antigravity。
+- **进程占用检测**：操作时自动检测客户端运行状态，提示并支持协助关闭相关进程，避免因文件被占用导致写入失败。
 
 ## 使用方法
 
-### 1. 跨平台 Python 极速脚本（零外部依赖，免编译）
+### 图形界面（推荐）
 
-如果你不想下载额外图形工具，只需在终端克隆本项目并执行一行脚本：
+1. 下载或编译生成 `AntigravityCN.exe`，直接双击运行。
+2. 程序会自动检测本地安装路径及运行状态（若未找到，可在界面手动选择 `app.asar` 文件）。
+3. 点击 **【安装汉化】**，等待提示完成。
+4. 点击 **【启动 Antigravity】** 即可体验中文界面。
+5. 如需恢复官方英文原版，随时点击 **【还原英文原版】**。
 
-```bash
-# 一键安装汉化
-python patch.py
+> 提示：如果汉化后界面文案未刷新，可点击界面中的 **【清理缓存】** 按钮后再重启客户端。界面右上角支持切换浅色、深色或跟随系统主题。
 
-# 还原官方原版
-python patch.py --restore
-```
+### 命令行模式
 
-### 2. 便携图形界面（推荐）
-
-1. 下载或编译生成的 **`AntigravityCN.exe`**。
-2. 直接**双击运行** `AntigravityCN.exe`。
-3. 程序将自动检测 Antigravity 的安装路径与运行状态。
-4. 点击 **【🚀 一键安装汉化】**，即可完成自动备份与汉化注入。
-5. 点击 **【✨ 启动 Antigravity】** 即可开启简体中文体验。
-6. 如需恢复原版，点击 **【🔄 还原英文原版】** 即可。
-
-### 3. 命令行静默调用 (CLI)
-
-支持无缝嵌入自动化运维与静默脚本：
+程序支持命令行参数，便于编写脚本或自动化调用：
 
 ```powershell
-# 基础用法
-.\AntigravityCN.exe -apply                # 一键安装简体中文汉化
-.\AntigravityCN.exe -restore              # 还原官方英文原版
-.\AntigravityCN.exe -launch               # 启动 Antigravity
-.\AntigravityCN.exe -help                 # 查看帮助信息
+# 一键安装汉化（自动查找安装路径）
+.\AntigravityCN.exe -apply
 
-# 高级参数
-.\AntigravityCN.exe -path "<asar_path>"   # 指定自定义 app.asar 路径
-.\AntigravityCN.exe -force-close          # 若检测到程序运行中，自动安全关闭进程
+# 还原官方英文原版
+.\AntigravityCN.exe -restore
 
-# 组合示例：静默安装汉化并在冲突时自动关闭进程
-.\AntigravityCN.exe -apply -force-close
+# 清理客户端临时渲染与编译缓存
+.\AntigravityCN.exe -clean-cache
+
+# 启动客户端
+.\AntigravityCN.exe -launch
+
+# 查看全部命令行参数
+.\AntigravityCN.exe -help
 ```
 
----
+常用参数说明：
 
-## 词典维护与扩展
-
-本地化词典位于 `patches/locales/zh-CN/` 目录，按 4 大业务核心模块解耦管理：
-
-| 模块文件 | 覆盖功能范围 |
+| 参数 | 说明 |
 | :--- | :--- |
-| **`通用.json`** | 全局基础词条、常用操作按钮、通用状态指示、单位与时间、顶部菜单栏、窗口与窗格控制、命令面板 (Command Palette) 与快捷键提示 |
-| **`对话.json`** | 对话交互、输入框、智能体状态、Thinking 思考过程展示、Diff 代码审查与变更审批、浏览器子智能体 (`/browser`)、终端管理、后台任务与诊断 |
-| **`设置.json`** | 外观主题、通用偏好、安全预设 (Security Preset)、沙箱与网络策略、模型选择与配置、Thinking 档位与推理强度、模型配额与额度计费 |
-| **`工作区.json`** | 工作区管理、项目设置、CitC 工作区、Git 源代码管理、分支与 Worktree、自定义系统 (Skills, Rules, Hooks, UI Plugins, Token 预算)、MCP 服务器与工具调用 |
+| `-apply` | 执行简体中文汉化注入 |
+| `-restore` | 从备份还原官方英文原版 |
+| `-clean-cache` | 清理客户端缓存（不影响用户配置与登录状态） |
+| `-launch` | 启动 Antigravity 客户端 |
+| `-path <路径>` | 手动指定 `app.asar` 文件的绝对路径 |
+| `-force-close` | 若检测到 Antigravity 正在运行，自动关闭进程以释放文件占用 |
+| `-help` | 显示命令行参数帮助信息 |
 
-> **开发说明**：
-> 1. **即改即用**：直接修改或新增对应 JSON 文件中的词条，Go Patcher 在应用补丁时会自动即时合并装配，无需单独的词典构建流程。
-> 2. **大小写智能降级**：运行时引擎已内置小写索引查找机制，无需重复添加全小写、全大写或首字母大写等变体词条。
+示例：指定路径安装并在程序运行时自动关闭：
 
----
+```powershell
+.\AntigravityCN.exe -apply -force-close -path "D:\Tools\Antigravity\resources\app.asar"
+```
 
-## 源码编译构建
+## 词典维护
 
-若希望自行从源码构建便携版 EXE：
+汉化词典存放在 `patches/locales/zh-CN/` 目录下，按功能模块化维护：
+
+- `通用.json`：全局基础操作、按钮、系统菜单、命令面板与常用提示。
+- `设置.json`：外观偏好、安全预设、终端沙箱、模型与配额限额等。
+- `对话.json`：聊天会话、代码审查 Diff、任务状态提示等。
+- `工作区.json`：项目管理、Git 相关功能、扩展系统（Skills、Rules 等）及 MCP 服务。
+
+程序在汉化注入时会自动合并该目录下的所有 JSON 词典。如需补充翻译，直接在对应 JSON 文件中添加键值对即可。
+
+`scripts/` 目录下提供了辅助维护脚本：
+- `audit_locales.js`：检查词典冲突与格式变体。
+- `batch_clean_locales.js`：词典清洗与去重。
+- `sort_locales.py`：按英文字母序重新排序词典。
+
+## 源码构建
+
+如需自行编译二进制文件，请参考以下步骤：
 
 ### 环境要求
-- [Go](https://go.dev/) 1.22+
-- [Wails CLI v2](https://wails.io) (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
 
-### 构建命令
-在项目根目录下执行打包脚本：
+- [Go](https://go.dev/) 1.22 及以上
+- [Node.js](https://nodejs.org/) 18+ 与 npm
+- [Wails CLI v2](https://wails.io/)（安装命令：`go install github.com/wailsapp/wails/v2/cmd/wails@latest`）
+
+### 构建步骤
+
+在项目根目录下运行打包脚本：
 
 ```powershell
+# 使用 PowerShell 构建（推荐）
 .\build.ps1
-# 或
+
+# 或使用批处理脚本
 .\build.bat
 ```
 
-构建完成后，根目录将自动输出单文件便携可执行程序 `AntigravityCN.exe`。
+构建成功后，可执行文件位于 `build/bin/AntigravityCN.exe`。
 
----
+## 常见问题
 
-## 项目结构
+- **客户端更新后汉化失效？**  
+  客户端自动更新会覆盖 `app.asar`。只需重新运行本工具并点击 **【一键安装汉化】**（或执行 `.\AntigravityCN.exe -apply`）即可重新应用。
+- **提示文件被占用导致汉化失败？**  
+  操作前请先退出 Antigravity 客户端；或者在命令行中加上 `-force-close` 参数让程序自动结束相关进程。
+- **汉化后部分界面仍显示英文？**  
+  可能是 Chromium 视图缓存未更新，点击界面上的 **【清理缓存】**（或执行 `.\AntigravityCN.exe -clean-cache`）后重新启动客户端即可。
 
-```
-AntigravityCN/
-├── AntigravityCN.exe           # 编译生成的 Wails 单文件便携程序 (双击即用)
-├── patch.py                    # 跨平台免编译一键补丁脚本
-├── main.go                     # 主入口、CLI 参数解析与资源内嵌 (embed)
-├── app.go                      # Wails 后端与前端 Bridge API
-├── wails.json                  # Wails v2 项目配置
-├── build.ps1 / build.bat       # 一键自动化编译打包脚本
-├── frontend/                   # 现代化前端界面 (Glassmorphism / Mica UI)
-│   ├── index.html              # 前端无边框窗口布局
-│   ├── package.json            # 前端依赖配置
-│   └── src/                    # 样式与前端交互逻辑
-├── internal/                   # 纯 Go 实现的 ASAR 引擎与补丁注入核心
-├── patches/                    # 汉化补丁源文件 (编译时自动内嵌进 EXE)
-│   ├── preload.js              # 应用内 Web UI 动态汉化与 DOM 拦截引擎
-│   ├── menu.js                 # 原生系统菜单汉化
-│   ├── tray.js                 # 系统托盘与上下文菜单汉化
-│   ├── updater.js              # 自动更新与提示弹窗汉化
-│   ├── ipcHandlers.js          # IPC 通信与原生系统对话框汉化
-│   ├── loadingOverlay.js       # 启动加载界面汉化
-│   ├── main.js                 # Electron 生命周期与窗口初始化汉化
-│   ├── ideInstall/             # 欢迎向导汉化模块
-│   └── locales/zh-CN/          # 模块化简体中文本地化词典
-└── scripts/                    # 图标生成与词典维护辅助脚本
-```
+## 说明与协议
 
----
-
-## 注意事项
-
-- **官方更新处理**：当 Google Antigravity 客户端自动升级后，官方更新会覆盖 `app.asar`。此时只需重新运行 `python patch.py` 或打开图形工具点击 **【🚀 一键安装汉化】** 即可。
-- **备份与还原**：程序在首次执行汉化时会自动在同目录创建 `app.asar.backup` 备份文件，支持随时无损恢复。
-- **文件占用提示**：执行汉化或还原前请先退出 Antigravity，避免 Windows 文件锁定导致写入失败。
-
----
-
-## 免责声明
-
-本项目为第三方开源本地化工具，仅供个人学习与交流使用。项目涉及的 Google Antigravity 软件著作权归 Google 及其关联公司所有。
+- 本项目基于 MIT 协议开源，仅供个人学习与交流使用。
+- 项目中涉及的 Google Antigravity 软件著作权及商标归 Google 及其关联公司所有。

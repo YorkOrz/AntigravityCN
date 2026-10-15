@@ -1,5 +1,9 @@
 import { createApp } from 'vue'
+import './assets/styles/icon-font.css'
 import './assets/styles/main.css'
 import App from './App.vue'
+import { vRipple } from './directives/vRipple'
 
-createApp(App).mount('#app')
+const app = createApp(App)
+app.directive('ripple', vRipple)
+app.mount('#app')

@@ -38,59 +38,9 @@ exports.updateTrayAgentCount = updateTrayAgentCount;
 const electron_1 = require("electron");
 const path = __importStar(require("path"));
 const utils_1 = require("./utils");
-
 // Keep tray as a global variable to prevent it from being garbage collected.
 let tray = null;
 let contextMenu = null;
-
-// ============================================================================
-// 托盘菜单本地化辅助模块
-// ============================================================================
-const TRAY_I18N_MAP = {
-    'No agents running': '暂无正在运行的智能体',
-    'Quit': '退出',
-    'New Window': '新建窗口',
-    'Documentation': '官方文档',
-    'Check for Updates': '检查更新',
-    'Cancel': '取消',
-};
-
-/**
- * 转换托盘单条菜单项的文本标签
- */
-function translateTrayLabel(label) {
-    if (!label || typeof label !== 'string') return label;
-    const trimmed = label.trim();
-    if (TRAY_I18N_MAP[trimmed]) return TRAY_I18N_MAP[trimmed];
-    if (trimmed.startsWith('Open ')) {
-        return '打开 ' + trimmed.slice(5);
-    }
-    if (trimmed.endsWith(' agent running')) {
-        return trimmed.replace(' agent running', ' 个智能体正在运行');
-    }
-    if (trimmed.endsWith(' agents running')) {
-        return trimmed.replace(' agents running', ' 个智能体正在运行');
-    }
-    return label;
-}
-
-/**
- * 递归遍历并汉化托盘上下文菜单配置列表
- */
-function translateTrayActions(items) {
-    if (!Array.isArray(items)) return items;
-    return items.map((item) => {
-        const copy = Object.assign({}, item);
-        if (copy.label) {
-            copy.label = translateTrayLabel(copy.label);
-        }
-        if (copy.submenu) {
-            copy.submenu = translateTrayActions(copy.submenu);
-        }
-        return copy;
-    });
-}
-
 /**
  * Creates a system tray icon with a context menu to focus a window or quit the app.
  *
@@ -108,13 +58,9 @@ function createTray(actions) {
     }
     tray = new electron_1.Tray(icon);
     tray.setToolTip(electron_1.app.getName());
-
-    // 注入汉化后的上下文菜单配置
-    const localizedActions = translateTrayActions(actions);
-    contextMenu = electron_1.Menu.buildFromTemplate(localizedActions);
+    contextMenu = electron_1.Menu.buildFromTemplate(actions);
     tray.setContextMenu(contextMenu);
 }
-
 /**
  * Updates the active agents count in the tray menu.
  */
@@ -122,7 +68,9 @@ function updateTrayAgentCount(count) {
     if (tray && contextMenu) {
         const countItem = contextMenu.items.find((item) => item.id === 'running-agents');
         if (countItem) {
-            countItem.label = count > 0 ? `${count} 个智能体正在运行` : '暂无正在运行的智能体';
+            countItem.label =
+                (count > 0 ? `${count} 个` : '无') +
+                    '智能体正在运行';
             tray.setContextMenu(contextMenu);
         }
     }

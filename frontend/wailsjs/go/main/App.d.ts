@@ -4,6 +4,8 @@ import {main} from '../models';
 
 export function ApplyPatch(arg1:string,arg2:boolean):Promise<main.ActionResult>;
 
+export function CleanAppCache():Promise<main.ActionResult>;
+
 export function GetInitialState():Promise<main.AppState>;
 
 export function LaunchAntigravity(arg1:string):Promise<main.ActionResult>;

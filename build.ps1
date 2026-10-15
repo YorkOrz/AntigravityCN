@@ -8,7 +8,8 @@
 [CmdletBinding()]
 param(
     [switch]$NoPause,
-    [switch]$ForceIcon
+    [switch]$ForceIcon,
+    [switch]$CopyToRoot
 )
 
 # 确保控制台输出使用 UTF-8 编码
@@ -70,7 +71,7 @@ try {
     # 4. 检查并生成高清图标 (智能增量跳过，极大加快构建速度)
     $iconFile = "build\windows\icon.ico"
     $appIconFile = "build\appicon.png"
-    $svgFile = "logo.svg"
+    $svgFile = if (Test-Path "build\logo.svg") { "build\logo.svg" } else { "logo.svg" }
     $scriptFile = "scripts\generate_icon.js"
 
     $needRegenIcon = $false
@@ -93,7 +94,7 @@ try {
         if (Test-Path $scriptFile) {
             $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
             if ($nodeCmd) {
-                Write-Host "[*] 检测到源文件变更或指定了强制生成，正在从 logo.svg 生成 Windows 高清多分辨率应用图标..." -ForegroundColor Yellow
+                Write-Host "[*] 检测到源文件变更或指定了强制生成，正在从 $svgFile 生成 Windows 高清多分辨率应用图标..." -ForegroundColor Yellow
                 try {
                     & node scripts/generate_icon.js --force
                 } catch {
@@ -107,6 +108,21 @@ try {
         Write-Host "[OK] 应用图标已是最新，跳过重新生成 (使用 .\build.ps1 -ForceIcon 可强制重新生成)。" -ForegroundColor Green
     }
 
+    # 4.5 检查并构建模块化 preload.js 注入脚本
+    $preloadBuildScript = "scripts\build_preload.js"
+    if (Test-Path $preloadBuildScript) {
+        $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+        if ($nodeCmd) {
+            Write-Host "[*] 正在从 patches/src/preload/ 组装最新 preload.js 补丁..." -ForegroundColor Yellow
+            try {
+                & node scripts/build_preload.js
+                Write-Host "[OK] preload.js 组装完成。" -ForegroundColor Green
+            } catch {
+                Write-Host "[!] preload.js 组装异常，将使用现有文件继续构建。" -ForegroundColor DarkYellow
+            }
+        }
+    }
+
     # 5. 执行编译构建
     Write-Host "[*] 正在执行 Wails 构建打包..." -ForegroundColor Yellow
 
@@ -118,15 +134,20 @@ try {
 
     $binPath = "build\bin\AntigravityCN.exe"
     if (Test-Path $binPath) {
-        Copy-Item $binPath "AntigravityCN.exe" -Force
-        $fileSize = (Get-Item "AntigravityCN.exe").Length / 1MB
+        $fileSize = (Get-Item $binPath).Length / 1MB
         Write-Host ""
         Write-Host "[OK] 编译成功！" -ForegroundColor Green
-        Write-Host ("     输出位置: {0}\AntigravityCN.exe" -f (Get-Location)) -ForegroundColor Green
+        Write-Host ("     输出位置: {0}\{1}" -f (Get-Location), $binPath) -ForegroundColor Green
         Write-Host ("     文件大小: {0:N2} MB" -f $fileSize) -ForegroundColor Green
+
+        if ($CopyToRoot) {
+            Copy-Item $binPath "AntigravityCN.exe" -Force
+            Write-Host "     已同步输出至根目录: AntigravityCN.exe" -ForegroundColor Green
+        }
+
         Write-Host ""
         Write-Host "================================================" -ForegroundColor Cyan
-        Write-Host "   您可以直接双击根目录下的 AntigravityCN.exe 运行！" -ForegroundColor Cyan
+        Write-Host ("   您可以直接双击 {0} 运行！" -f $binPath) -ForegroundColor Cyan
         Write-Host "================================================" -ForegroundColor Cyan
     } else {
         Write-Host ("[错误] 未能找到编译输出文件: {0}" -f $binPath) -ForegroundColor Red

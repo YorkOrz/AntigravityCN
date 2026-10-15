@@ -1,0 +1,176 @@
+/* ==========================================================
+   AntigravityCN - Material Design 3 Base Styles & Resets
+   ========================================================== */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+html,
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: var(--md-ref-typeface-plain);
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: background-color var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard),
+              color var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+  background-color: var(--md-sys-color-surface);
+}
+
+/* ----------------------------------------------------------
+   M3 Scrollbars
+   ---------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-full);
+  transition: background var(--md-sys-motion-duration-short3) ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--md-sys-color-outline);
+}
+
+/* ----------------------------------------------------------
+   Form & Element Resets
+   ---------------------------------------------------------- */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Disabled visuals are defined per-component with M3 disabled tokens
+   (on-surface 12% container / 38% content); base only adjusts cursor */
+button:disabled {
+  cursor: not-allowed;
+}
+
+input {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  background: none;
+  outline: none;
+}
+
+code {
+  font-family: var(--md-ref-typeface-mono);
+}
+
+/* ----------------------------------------------------------
+   M3 Focus Ring (md.comp.focus-ring)
+   3px secondary ring, 2px outward offset; Chromium/WebView2
+   outlines follow border-radius automatically
+   ---------------------------------------------------------- */
+:focus-visible {
+  outline: var(--md-comp-focus-ring-width) solid var(--md-comp-focus-ring-color);
+  outline-offset: var(--md-comp-focus-ring-offset);
+}
+
+/* Outlined text fields signal focus with the 2px primary border
+   (md.comp.outlined-field.focus), so the inner input hides its ring */
+.path-input:focus-visible {
+  outline: none;
+}
+
+/* ----------------------------------------------------------
+   Accessibility: reduced motion preference
+   ---------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ----------------------------------------------------------
+   M3 Page & Transition Animations
+   ---------------------------------------------------------- */
+.page-fade-enter-active {
+  transition: opacity var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate),
+              transform var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+.page-fade-leave-active {
+  transition: opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized-accelerate),
+              transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized-accelerate);
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* M3 Modal Dialog Transitions */
+.modal-fade-enter-active {
+  transition: opacity var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate),
+              transform var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+.modal-fade-leave-active {
+  transition: opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate),
+              transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate);
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+/* M3 Snackbar Transitions */
+.snackbar-fade-enter-active {
+  transition: opacity var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate),
+              transform var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+.snackbar-fade-leave-active {
+  transition: opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized-accelerate),
+              transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized-accelerate);
+}
+
+.snackbar-fade-enter-from,
+.snackbar-fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 14px) scale(0.95);
+}

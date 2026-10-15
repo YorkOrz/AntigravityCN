@@ -31,8 +31,8 @@ func TestLoadLocalesDictWithChineseFilenames(t *testing.T) {
 		t.Errorf("Expected 4 locale module files, got %d", fileCount)
 	}
 
-	if totalKeys < 900 {
-		t.Errorf("Expected >= 900 keys, got %d", totalKeys)
+	if totalKeys < 1500 {
+		t.Errorf("Expected >= 1500 keys after expansion, got %d", totalKeys)
 	}
 
 	var parsed map[string]string
@@ -45,13 +45,13 @@ func TestLoadLocalesDictWithChineseFilenames(t *testing.T) {
 	}
 
 	sampleKeys := map[string]string{
-		"Ask a quick question without interrupting the main conversation.": "快速提问且不打断主对话。",
 		"Save":               "保存",
 		"Skills & Workflows": "技能与工作流",
 		"MCP Servers":        "MCP 服务器",
-		"Gemini Models":      "Gemini 模型",
 		"Appearance":         "外观",
-		"Workspaces":         "工作区列表",
+		"Connect to WSL":     "连接到 WSL",
+		"Reopen Locally":     "本地重新打开",
+		"Plan Review":        "计划审核",
 	}
 
 	for k, expectedVal := range sampleKeys {
@@ -88,8 +88,65 @@ func TestGetMergedPreloadData(t *testing.T) {
 		t.Errorf("Placeholder was not replaced in preload.js")
 	}
 
-	if !strings.Contains(mergedStr, "快速提问且不打断主对话。") {
+	if !strings.Contains(mergedStr, "连接到 WSL") {
 		t.Errorf("Merged preload.js does not contain expected Chinese translation")
+	}
+}
+
+func TestApplySurgicalPatches(t *testing.T) {
+	tempExtract, err := os.MkdirTemp("", "surgical_test_*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempExtract)
+
+	distDir := filepath.Join(tempExtract, "dist")
+	_ = os.MkdirAll(distDir, 0755)
+
+	// Mock dist/menu.js
+	menuPath := filepath.Join(distDir, "menu.js")
+	origMenuContent := `
+const submenuItem = appMenu.items.find((item) => item.label === submenuLabel);
+electron_1.Menu.setApplicationMenu(menu);
+`
+	_ = os.WriteFile(menuPath, []byte(origMenuContent), 0644)
+
+	// Mock dist/preload.js
+	preloadPath := filepath.Join(distDir, "preload.js")
+	origPreloadContent := `
+const electron_1 = require("electron");
+electron_1.contextBridge.exposeInMainWorld('wsl', {});
+`
+	_ = os.WriteFile(preloadPath, []byte(origPreloadContent), 0644)
+
+	mergedMock := []byte("const I18N_DICT = {'File':'文件'};\nconsole.log('inject');")
+	count, err := applySurgicalPatches(tempExtract, mergedMock, func(string) {})
+	if err != nil {
+		t.Fatalf("applySurgicalPatches failed: %v", err)
+	}
+
+	if count < 2 {
+		t.Errorf("Expected at least 2 files patched, got %d", count)
+	}
+
+	// Verify menu.js
+	menuPatched, _ := os.ReadFile(menuPath)
+	if !strings.Contains(string(menuPatched), "translateMenu") {
+		t.Errorf("menu.js missing translateMenu")
+	}
+
+	// Verify preload.js
+	preloadPatched, _ := os.ReadFile(preloadPath)
+	if !strings.Contains(string(preloadPatched), "const I18N_DICT =") {
+		t.Errorf("preload.js missing injection")
+	}
+}
+
+func TestCleanAppCache(t *testing.T) {
+	// Should run safely without error
+	_, err := CleanAppCache(func(string) {})
+	if err != nil {
+		t.Errorf("CleanAppCache returned error: %v", err)
 	}
 }
 

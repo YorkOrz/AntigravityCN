@@ -19,8 +19,10 @@ const util = require('util');
 const execPromise = util.promisify(exec);
 
 const rootDir = path.resolve(__dirname, '..');
-const svgPath = path.join(rootDir, 'logo.svg');
 const buildDir = path.join(rootDir, 'build');
+const svgPath = fs.existsSync(path.join(buildDir, 'logo.svg'))
+    ? path.join(buildDir, 'logo.svg')
+    : path.join(rootDir, 'logo.svg');
 const windowsBuildDir = path.join(buildDir, 'windows');
 const tempDir = path.join(process.env.TEMP || '.', 'antigravity_icon_build');
 
@@ -182,7 +184,7 @@ function rgbaToDib(decoded) {
 }
 
 async function main() {
-    console.log('[*] 正在从 logo.svg 渲染各分辨率高质量 PNG 图像...');
+    console.log(`[*] 正在从 ${path.relative(rootDir, svgPath)} 渲染各分辨率高质量 PNG 图像...`);
 
     // 覆盖 Windows 所有标准 DPI 缩放分辨率
     const allSizes = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256, 512];

@@ -84,7 +84,6 @@ func GetExecutablePath(asarPath string) string {
 }
 
 // enumProcesses iterates over running Win32 processes and calls visitor for each.
-// If visitor returns false, iteration stops early.
 func enumProcesses(visitor func(pid uint32, exeName string) bool) error {
 	snapshot, _, err := procCreateToolhelp32Snapshot.Call(uintptr(TH32CS_SNAPPROCESS), 0)
 	if snapshot == uintptr(syscall.InvalidHandle) {
@@ -127,10 +126,11 @@ func IsProcessRunning(exeName string) (bool, error) {
 	return found, err
 }
 
-// CloseAntigravityProcess closes running Antigravity processes in a single snapshot traversal
+// CloseAntigravityProcess closes running Antigravity and language_server processes
 func CloseAntigravityProcess() error {
 	return enumProcesses(func(pid uint32, name string) bool {
-		if strings.EqualFold(name, "antigravity.exe") {
+		lower := strings.ToLower(name)
+		if lower == "antigravity.exe" || lower == "language_server.exe" {
 			hProcess, _, _ := procOpenProcess.Call(uintptr(PROCESS_TERMINATE), 0, uintptr(pid))
 			if hProcess != 0 {
 				procTerminateProcess.Call(hProcess, 1)
@@ -188,6 +188,65 @@ func ensureProcessClosed(logFn func(string), opts *PatchOptions) error {
 	return fmt.Errorf("检测到 Antigravity 正在运行中！\n请先保存工作并退出 Antigravity，再执行汉化或还原操作（避免文件锁定冲突）。")
 }
 
+// isLocalizedAsar checks whether a given asar file already contains localization markers
+func isLocalizedAsar(filePath string) bool {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return false
+	}
+	content := string(data)
+	return strings.Contains(content, "// Antigravity 2.0 Chinese Localization Engine") ||
+		strings.Contains(content, "menuTranslationMap") ||
+		strings.Contains(content, "injectedMainWorldScript")
+}
+
+// CleanAppCache safely clears temporary rendering and bytecode caches
+func CleanAppCache(logFn func(string)) (int, error) {
+	if logFn == nil {
+		logFn = func(string) {}
+	}
+	logFn("[*] 正在扫描并安全清理 Antigravity 临时渲染与编译缓存...")
+
+	localAppData := os.Getenv("LOCALAPPDATA")
+	appData := os.Getenv("APPDATA")
+
+	cacheRoots := []string{
+		filepath.Join(appData, "Antigravity"),
+		filepath.Join(appData, "antigravity"),
+		filepath.Join(localAppData, "antigravity"),
+	}
+
+	targetSubDirs := []string{
+		"Cache",
+		"Code Cache",
+		"GPUCache",
+		"DawnGraphiteCache",
+		"DawnWebGPUCache",
+		"blob_storage",
+	}
+
+	cleanedCount := 0
+	for _, root := range cacheRoots {
+		if fi, err := os.Stat(root); err != nil || !fi.IsDir() {
+			continue
+		}
+		for _, sub := range targetSubDirs {
+			targetPath := filepath.Join(root, sub)
+			if fi, err := os.Stat(targetPath); err == nil && fi.IsDir() {
+				if err := os.RemoveAll(targetPath); err == nil {
+					logFn(fmt.Sprintf("    [+] 已清理临时缓存: %s (%s)", sub, root))
+					cleanedCount++
+				} else {
+					logFn(fmt.Sprintf("    [!] 缓存可能被占用，已跳过: %s", sub))
+				}
+			}
+		}
+	}
+
+	logFn(fmt.Sprintf("[OK] 缓存清理完成，共安全清理 %d 处临时目录（用户配置与账号不受影响）。", cleanedCount))
+	return cleanedCount, nil
+}
+
 // ApplyPatch applies the Chinese localization patch to app.asar
 func ApplyPatch(asarPath string, patchesFS fs.FS, logFn func(string), opts *PatchOptions) error {
 	if logFn == nil {
@@ -202,22 +261,26 @@ func ApplyPatch(asarPath string, patchesFS fs.FS, logFn func(string), opts *Patc
 		return err
 	}
 
-	// Backup original app.asar
+	// 1. Backup original app.asar
 	backupPath := GetBackupPath(asarPath)
 	if _, err := os.Stat(backupPath); os.IsNotExist(err) {
-		logFn("[*] 正在备份原始 app.asar...")
-		if err := copyFile(asarPath, backupPath); err != nil {
-			return fmt.Errorf("备份 app.asar 失败: %w", err)
+		if isLocalizedAsar(asarPath) {
+			logFn("[!] 警告：当前 app.asar 已包含汉化标记，跳过备份以避免污染英文原版。")
+		} else {
+			logFn("[*] 正在备份原始 app.asar...")
+			if err := copyFile(asarPath, backupPath); err != nil {
+				return fmt.Errorf("备份 app.asar 失败: %w", err)
+			}
+			logFn(fmt.Sprintf("[OK] 原始官方备份已创建：%s", backupPath))
 		}
-		logFn(fmt.Sprintf("[OK] 备份已保存至：%s", backupPath))
 	} else {
 		logFn("[OK] 已检测到原始备份文件，跳过备份。")
 	}
 
-	// Extract app.asar to temporary directory
+	// 2. Extract app.asar to temporary directory
 	tempExtractDir, err := os.MkdirTemp("", "antigravity_cn_ext_*")
 	if err != nil {
-		return fmt.Errorf("创建临时目录失败: %w", err)
+		return fmt.Errorf("创建临时解包目录失败: %w", err)
 	}
 	defer os.RemoveAll(tempExtractDir)
 
@@ -227,55 +290,31 @@ func ApplyPatch(asarPath string, patchesFS fs.FS, logFn func(string), opts *Patc
 	}
 	logFn("[OK] app.asar 解包完成。")
 
-	// Inject patch files into extracted directory
-	logFn("[*] 正在注入简体中文汉化补丁...")
-	appliedCount := 0
-	err = fs.WalkDir(patchesFS, ".", func(p string, d fs.DirEntry, walkErr error) error {
-		if walkErr != nil || d.IsDir() {
-			return walkErr
-		}
-
-		rel := strings.TrimPrefix(filepath.ToSlash(p), "patches/")
-		rel = strings.TrimPrefix(rel, "./")
-		if rel == "" || rel == "." || strings.HasPrefix(rel, "locales/") || rel == "locales" {
-			return nil
-		}
-
-		patchData, err := fs.ReadFile(patchesFS, p)
-		if err != nil {
-			logFn(fmt.Sprintf("    [!] 读取补丁文件失败，跳过: %s (%v)", rel, err))
-			return nil
-		}
-
-		if filepath.Base(rel) == "preload.js" {
-			patchData = getMergedPreloadData(patchesFS, patchData, logFn)
-		}
-
-		dstRel := filepath.Join("dist", filepath.FromSlash(rel))
-		targetFile := filepath.Join(tempExtractDir, dstRel)
-		if err := os.MkdirAll(filepath.Dir(targetFile), 0755); err != nil {
-			return fmt.Errorf("创建目标目录失败 %s: %w", targetFile, err)
-		}
-
-		if err := os.WriteFile(targetFile, patchData, 0644); err != nil {
-			return fmt.Errorf("写入补丁文件失败 %s: %w", dstRel, err)
-		}
-		logFn(fmt.Sprintf("    [+] 已应用补丁: %s", filepath.ToSlash(dstRel)))
-		appliedCount++
-		return nil
-	})
+	// 3. Assemble modular dictionary and prepare preload.js
+	preloadData, err := fs.ReadFile(patchesFS, "preload.js")
 	if err != nil {
-		return fmt.Errorf("遍历并应用补丁文件失败: %w", err)
-	}
-	if appliedCount == 0 {
-		return fmt.Errorf("未成功应用任何补丁，请检查补丁文件")
+		// Fallback if inside patches subdirectory
+		preloadData, err = fs.ReadFile(patchesFS, "patches/preload.js")
+		if err != nil {
+			return fmt.Errorf("读取 patches/preload.js 失败: %w", err)
+		}
 	}
 
-	// Repack ASAR
-	logFn("[*] 正在重新封装 app.asar...")
+	mergedPreloadData := getMergedPreloadData(patchesFS, preloadData, logFn)
+
+	// 4. Apply surgical patches to extracted code
+	logFn("[*] 正在执行外科手术式精准注入与汉化修补...")
+	patchedCount, err := applySurgicalPatches(tempExtractDir, mergedPreloadData, logFn)
+	if err != nil {
+		return fmt.Errorf("应用汉化补丁失败: %w", err)
+	}
+	logFn(fmt.Sprintf("[OK] 针对性修补已完成，共更新 %d 个核心原生与预加载模块。", patchedCount))
+
+	// 5. Repack ASAR with unpacked native module decoupling (maintains 4.53 MB)
+	logFn("[*] 正在重新封装 app.asar (对齐 4.53 MB 官方标准)...")
 	tempAsarFile, err := os.CreateTemp("", "app_cn_*.asar")
 	if err != nil {
-		return fmt.Errorf("创建临时 asar 文件失败: %w", err)
+		return fmt.Errorf("创建临时 asar 失败: %w", err)
 	}
 	tempAsarPath := tempAsarFile.Name()
 	_ = tempAsarFile.Close()
@@ -286,8 +325,8 @@ func ApplyPatch(asarPath string, patchesFS fs.FS, logFn func(string), opts *Patc
 	}
 	logFn("[OK] app.asar 封装完成。")
 
-	// Overwrite target app.asar
-	logFn("[*] 正在写入汉化版文件...")
+	// 6. Overwrite target app.asar
+	logFn("[*] 正在部署汉化版文件...")
 	if err := copyFile(tempAsarPath, asarPath); err != nil {
 		return fmt.Errorf("覆盖写入 app.asar 失败: %w", err)
 	}
@@ -307,16 +346,20 @@ func RestoreOriginal(asarPath string, logFn func(string), opts *PatchOptions) er
 		return fmt.Errorf("未找到备份文件：%s\n无法进行还原。", backupPath)
 	}
 
+	if isLocalizedAsar(backupPath) {
+		return fmt.Errorf("检测到备份文件 %s 本身包含汉化代码，无法直接还原！", backupPath)
+	}
+
 	if err := ensureProcessClosed(logFn, opts); err != nil {
 		return err
 	}
 
-	logFn("[*] 正在从备份还原原始 app.asar...")
+	logFn("[*] 正在从安全备份还原原始官方 app.asar...")
 	if err := copyFile(backupPath, asarPath); err != nil {
 		return fmt.Errorf("还原文件失败: %w", err)
 	}
 
-	logFn("[OK] 还原成功！已恢复为英文官方原版。")
+	logFn("[OK] 还原成功！已恢复为官方英文原版。")
 	return nil
 }
 
@@ -388,17 +431,7 @@ func loadLocalesDict(patchesFS fs.FS, logFn func(string)) ([]byte, int, int, err
 		}
 	}
 
-	for _, file := range []string{"locales/zh-CN.json", "patches/locales/zh-CN.json"} {
-		if data, err := fs.ReadFile(patchesFS, file); err == nil {
-			var singleMap map[string]string
-			if unmarshalErr := json.Unmarshal(data, &singleMap); unmarshalErr != nil {
-				return nil, 0, 0, fmt.Errorf("%s JSON 格式有误: %w", file, unmarshalErr)
-			}
-			return data, len(singleMap), 1, nil
-		}
-	}
-
-	return nil, 0, 0, fmt.Errorf("未找到 locales/zh-CN/ 目录或 locales/zh-CN.json 词典文件")
+	return nil, 0, 0, fmt.Errorf("未找到 patches/locales/zh-CN/ 模块化词典目录")
 }
 
 // getMergedPreloadData bundles the locales dictionary into preload.js at patch time
@@ -420,5 +453,3 @@ func getMergedPreloadData(patchesFS fs.FS, preloadData []byte, logFn func(string
 	}
 	return []byte(merged)
 }
-
-

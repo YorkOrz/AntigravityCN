@@ -1,0 +1,576 @@
+/* ==========================================================
+   AntigravityCN - Material Design 3 Components System
+   M3 Cards, Buttons, TextFields, Badges & Micro-interactions
+   ========================================================== */
+
+/* ----------------------------------------------------------
+   M3 Icon (Material Symbols Rounded, self-hosted variable font)
+   ---------------------------------------------------------- */
+.md-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ----------------------------------------------------------
+   M3 Ripple & State Layers
+   ---------------------------------------------------------- */
+.md-state-layer {
+  position: relative;
+  overflow: hidden;
+}
+
+.md-state-layer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--md-sys-motion-duration-short2) ease;
+}
+
+.md-state-layer:hover:not(:disabled)::before {
+  opacity: var(--md-sys-state-hover-opacity);
+}
+
+.md-state-layer:focus-visible:not(:disabled)::before {
+  opacity: var(--md-sys-state-focus-opacity);
+}
+
+.md-state-layer:active:not(:disabled)::before {
+  opacity: var(--md-sys-state-pressed-opacity);
+}
+
+.md-ripple-wave {
+  position: absolute;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.15;
+  pointer-events: none;
+  transform: scale(0);
+  animation: md-ripple-animation 500ms var(--md-sys-motion-easing-emphasized-decelerate) forwards;
+}
+
+@keyframes md-ripple-animation {
+  to {
+    transform: scale(3.5);
+    opacity: 0;
+  }
+}
+
+/* ----------------------------------------------------------
+   M3 Cards (md.comp.card: elevated / filled / outlined;
+   non-interactive cards carry no hover state)
+   ---------------------------------------------------------- */
+.md-card {
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 16px 18px;
+  position: relative;
+  transition: box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+              background-color var(--md-sys-motion-duration-short4) ease,
+              border-color var(--md-sys-motion-duration-short4) ease;
+}
+
+.md-card--elevated {
+  background-color: var(--md-sys-color-surface-container-low);
+  box-shadow: var(--md-sys-elevation-level1);
+}
+
+.md-card--filled {
+  background-color: var(--md-sys-color-surface-container-highest);
+}
+
+.md-card--outlined {
+  background-color: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--md-sys-color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-title {
+  font: var(--md-sys-typescale-title-small);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  color: var(--md-sys-color-on-surface);
+}
+
+.card-subtitle {
+  font: var(--md-sys-typescale-body-small);
+  letter-spacing: var(--md-sys-typescale-body-small-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 2px;
+}
+
+/* ----------------------------------------------------------
+   Status Overview Grid (3 Columns)
+   ---------------------------------------------------------- */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.status-card {
+  background-color: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--md-sys-elevation-level1);
+  transition: box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+              background-color var(--md-sys-motion-duration-short4) ease,
+              border-color var(--md-sys-motion-duration-short4) ease;
+}
+
+.status-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.status-icon-box.ok {
+  background-color: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+
+.status-icon-box.warn {
+  background-color: var(--md-sys-color-warning-container);
+  color: var(--md-sys-color-on-warning-container);
+}
+
+.status-icon-box.err {
+  background-color: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
+.status-card-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.status-label {
+  font: var(--md-sys-typescale-label-medium);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.status-desc {
+  font: var(--md-sys-typescale-title-small);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  color: var(--md-sys-color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ----------------------------------------------------------
+   M3 Badges & Status Chips
+   ---------------------------------------------------------- */
+.md-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--md-sys-shape-corner-full);
+  font: var(--md-sys-typescale-label-small);
+  letter-spacing: var(--md-sys-typescale-label-small-tracking);
+  font-weight: 500;
+  flex-shrink: 0;
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.md-badge.ok {
+  background-color: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+
+.md-badge.warn {
+  background-color: var(--md-sys-color-warning-container);
+  color: var(--md-sys-color-on-warning-container);
+}
+
+.md-badge.err {
+  background-color: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
+.md-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* ----------------------------------------------------------
+   M3 Outlined Text Field & Toolbar
+   (md.comp.outlined-field: extra-small shape, hover border
+   on-surface, focus border primary 2px)
+   ---------------------------------------------------------- */
+.path-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.md-textfield-outlined {
+  flex: 1;
+  height: var(--md-comp-textfield-height);
+  display: flex;
+  align-items: center;
+  background-color: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-comp-textfield-shape);
+  padding: 0 12px;
+  transition: border-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+              box-shadow var(--md-sys-motion-duration-short3) ease;
+  overflow: hidden;
+}
+
+.md-textfield-outlined:hover:not(:focus-within) {
+  border-color: var(--md-sys-color-on-surface);
+}
+
+.md-textfield-outlined:focus-within {
+  border-color: var(--md-sys-color-primary);
+  border-width: 2px;
+  padding: 0 11px;
+}
+
+.path-tag {
+  font: var(--md-sys-typescale-label-small);
+  font-weight: 700;
+  font-family: var(--md-ref-typeface-mono);
+  padding: 2px 7px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.path-input {
+  flex: 1;
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-body-medium);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  font-family: var(--md-ref-typeface-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.path-input::placeholder {
+  color: var(--md-sys-color-outline);
+}
+
+/* ----------------------------------------------------------
+   M3 Buttons Architecture
+   (md.comp.filled-button / filled-tonal-button / outlined-button /
+   text-button: full shape, label-large 500, rest elevation 0,
+   hover elevation 1 for filled/tonal only, state layers via
+   .md-state-layer, no hover translation)
+   ---------------------------------------------------------- */
+.md-btn {
+  height: var(--md-comp-button-height);
+  padding: 0 var(--md-comp-button-space);
+  border-radius: var(--md-sys-shape-corner-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: var(--md-sys-typescale-label-large);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+              background-color var(--md-sys-motion-duration-short3) ease,
+              color var(--md-sys-motion-duration-short3) ease,
+              border-color var(--md-sys-motion-duration-short3) ease;
+}
+
+/* M3 Filled Button (High Emphasis) */
+.md-btn--filled {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.md-btn--filled:hover:not(:disabled) {
+  box-shadow: var(--md-sys-elevation-level1);
+}
+
+.md-btn--filled:disabled {
+  background-color: var(--md-comp-button-disabled-container);
+  color: var(--md-comp-button-disabled-content);
+}
+
+/* M3 Filled Tonal Button (Medium Emphasis) */
+.md-btn--tonal {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.md-btn--tonal:hover:not(:disabled) {
+  box-shadow: var(--md-sys-elevation-level1);
+}
+
+.md-btn--tonal:disabled {
+  background-color: var(--md-comp-button-disabled-container);
+  color: var(--md-comp-button-disabled-content);
+}
+
+/* M3 Tertiary Tonal Button (Accent Emphasis for Launch) */
+.md-btn--tertiary {
+  background-color: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+
+.md-btn--tertiary:hover:not(:disabled) {
+  box-shadow: var(--md-sys-elevation-level1);
+}
+
+.md-btn--tertiary:disabled {
+  background-color: var(--md-comp-button-disabled-container);
+  color: var(--md-comp-button-disabled-content);
+}
+
+/* M3 Outlined Button (border = outline, hover = state layer only) */
+.md-btn--outlined {
+  background-color: transparent;
+  color: var(--md-sys-color-primary);
+  border: 1px solid var(--md-sys-color-outline);
+}
+
+.md-btn--outlined:disabled {
+  border-color: var(--md-comp-button-disabled-container);
+  color: var(--md-comp-button-disabled-content);
+}
+
+/* M3 Text Button (Low Emphasis) */
+.md-btn--text {
+  background-color: transparent;
+  color: var(--md-sys-color-primary);
+  padding: 0 var(--md-comp-button-text-space);
+}
+
+.md-btn--text:disabled {
+  color: var(--md-comp-button-disabled-content);
+}
+
+/* ----------------------------------------------------------
+   Core Action Buttons Grid (3 Equal Columns)
+   ---------------------------------------------------------- */
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.btn-action {
+  height: var(--md-comp-button-height-large);
+}
+
+/* ----------------------------------------------------------
+   M3 Icon Button
+   (md.comp.icon-button variants: standard / filled / tonal /
+   outlined; 40px target size, state layer = currentColor)
+   ---------------------------------------------------------- */
+.md-icon-btn {
+  width: var(--md-comp-icon-button-size);
+  height: var(--md-comp-icon-button-size);
+  border-radius: var(--md-sys-shape-corner-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-on-surface-variant);
+  position: relative;
+  overflow: hidden;
+  transition: background-color var(--md-sys-motion-duration-short2) ease,
+              color var(--md-sys-motion-duration-short2) ease,
+              border-color var(--md-sys-motion-duration-short2) ease;
+}
+
+.md-icon-btn--standard:hover:not(:disabled) {
+  color: var(--md-sys-color-on-surface);
+}
+
+.md-icon-btn--filled {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.md-icon-btn--tonal {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.md-icon-btn--outlined {
+  border: 1px solid var(--md-sys-color-outline);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.md-icon-btn--outlined:hover:not(:disabled) {
+  color: var(--md-sys-color-on-surface);
+}
+
+.md-icon-btn:disabled {
+  color: var(--md-comp-button-disabled-content);
+}
+
+.md-icon-btn--filled:disabled,
+.md-icon-btn--tonal:disabled {
+  background-color: var(--md-comp-button-disabled-container);
+  color: var(--md-comp-button-disabled-content);
+}
+
+.md-icon-btn--outlined:disabled {
+  border-color: var(--md-comp-button-disabled-container);
+}
+
+/* ----------------------------------------------------------
+   Settings Components & Theme Cards
+   (M3 selection semantics: 1px outline-variant border, hover
+   outline, selected = 2px primary border via inset ring)
+   ---------------------------------------------------------- */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.theme-card {
+  background-color: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  font: inherit;
+  color: inherit;
+  transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+              border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+              box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+}
+
+.theme-card:hover {
+  border-color: var(--md-sys-color-outline);
+}
+
+.theme-card.active {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+}
+
+.theme-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.theme-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--md-sys-shape-corner-small);
+  background-color: var(--md-sys-color-surface-container-high);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-primary);
+}
+
+.theme-card.active .theme-icon-wrap {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+/* M3 Radio (md.comp.radio: 20px circle, 2px outline ring,
+   10px primary dot, animated dot scale-in) */
+.theme-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--md-sys-color-outline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.theme-card.active .theme-radio {
+  border-color: var(--md-sys-color-primary);
+}
+
+.theme-radio-inner {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--md-sys-color-primary);
+  transform: scale(0);
+  transition: transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+.theme-card.active .theme-radio-inner {
+  transform: scale(1);
+}
+
+.theme-card-title {
+  font: var(--md-sys-typescale-title-small);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  color: var(--md-sys-color-on-surface);
+}
+
+.theme-card-desc {
+  font: var(--md-sys-typescale-body-small);
+  letter-spacing: var(--md-sys-typescale-body-small-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.4;
+}

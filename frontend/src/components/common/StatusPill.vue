@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import MdBadge from '@/components/md3/MdBadge.vue'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     label: string
     value: string
@@ -11,22 +11,11 @@ const props = withDefaults(
     status: 'default'
   }
 )
-
-const statusClass = computed(() => {
-  if (props.status === 'ok') return 'status-ok'
-  if (props.status === 'warn') return 'status-warn'
-  if (props.status === 'err') return 'status-err'
-  return ''
-})
 </script>
 
 <template>
-  <div class="status-pill" :class="statusClass">
-    <div class="status-dot-wrap">
-      <span class="status-dot"></span>
-    </div>
-    <span class="status-label">{{ label }}</span>
-    <span class="status-divider">·</span>
-    <span class="status-value">{{ value }}</span>
-  </div>
+  <MdBadge :status="status" :show-dot="true">
+    <span style="opacity: 0.8;">{{ label }} ·</span>
+    <span>{{ value }}</span>
+  </MdBadge>
 </template>

@@ -1,0 +1,292 @@
+/* ==========================================================
+   AntigravityCN - Material Design 3 Layout Architecture
+   M3 Navigation Drawer + Top App Bar + Main Canvas Grid
+   ========================================================== */
+
+.app-shell {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--md-sys-color-surface);
+  overflow: hidden;
+}
+
+/* ----------------------------------------------------------
+   M3 Navigation Drawer (Sidebar)
+   ---------------------------------------------------------- */
+.md-navigation-drawer {
+  width: var(--md-comp-navigation-drawer-width);
+  min-width: var(--md-comp-navigation-drawer-width);
+  height: 100%;
+  background-color: var(--md-sys-color-surface-container-low);
+  border-right: 1px solid var(--md-sys-color-outline-variant);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 12px;
+  z-index: 10;
+  transition: background-color var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard),
+              border-color var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
+}
+
+/* Brand Header */
+.drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 16px 10px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+/* Brand app icon: the SVG carries its own squircle badge, so the wrap
+   stays transparent to avoid a halo ring around the baked-in margins */
+.brand-logo-wrap {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-logo-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.brand-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.brand-title {
+  font: var(--md-sys-typescale-title-medium);
+  letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+  color: var(--md-sys-color-on-surface);
+  line-height: 1.2;
+}
+
+.brand-subtitle-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.brand-subtitle {
+  font: var(--md-sys-typescale-label-small);
+  letter-spacing: var(--md-sys-typescale-label-small-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* Navigation Menu */
+.drawer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+  flex: 1;
+}
+
+/* M3 Navigation Destination (md.comp.navigation-drawer:
+   56px item, full-shape indicator, label-large) */
+.drawer-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--md-comp-navigation-item-height);
+  padding: 0 16px;
+  border-radius: var(--md-sys-shape-corner-full);
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-label-large);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  cursor: pointer;
+  overflow: hidden;
+  transition: color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+              background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+}
+
+/* M3 State layer for drawer nav items */
+.drawer-nav-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: currentColor;
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short2) ease;
+  pointer-events: none;
+}
+
+.drawer-nav-item:hover::before {
+  opacity: var(--md-sys-state-hover-opacity);
+}
+
+.drawer-nav-item:focus-visible::before {
+  opacity: var(--md-sys-state-focus-opacity);
+}
+
+.drawer-nav-item:active::before {
+  opacity: var(--md-sys-state-pressed-opacity);
+}
+
+/* Active State with M3 Indicator Pill (active label = weight-bold per
+   md.comp.navigation-drawer.active-label-text-weight) */
+.drawer-nav-item.active {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: 700;
+}
+
+.drawer-nav-item.active .nav-icon {
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.nav-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.nav-title {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* Drawer Footer */
+.drawer-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.drawer-footer-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-label-medium);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  cursor: pointer;
+  overflow: hidden;
+  background-color: transparent;
+  transition: background-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+              color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+}
+
+.drawer-footer-btn:hover {
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+}
+
+/* ----------------------------------------------------------
+   M3 Top App Bar & Window Titlebar
+   ---------------------------------------------------------- */
+.main-wrapper {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--md-sys-color-surface);
+  overflow: hidden;
+}
+
+.top-app-bar {
+  height: var(--md-comp-top-app-bar-height);
+  min-height: var(--md-comp-top-app-bar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--md-sys-color-surface-container-low);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  z-index: 5;
+  transition: background-color var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard),
+              border-color var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
+}
+
+.top-app-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: var(--md-sys-typescale-title-small);
+  color: var(--md-sys-color-on-surface);
+}
+
+.page-breadcrumb-sub {
+  font: var(--md-sys-typescale-body-small);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.top-app-bar-center {
+  flex: 1;
+  height: 100%;
+}
+
+.top-app-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Window Control Buttons */
+.window-ctrl-btn {
+  width: 32px;
+  height: 28px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: background-color var(--md-sys-motion-duration-short2) ease,
+              color var(--md-sys-motion-duration-short2) ease;
+}
+
+.window-ctrl-btn:hover {
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+}
+
+.window-ctrl-btn.close-btn:hover {
+  background-color: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-error);
+}
+
+/* ----------------------------------------------------------
+   Main Workspace Canvas
+   ---------------------------------------------------------- */
+.main-content {
+  flex: 1;
+  padding: 16px 20px 20px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+}

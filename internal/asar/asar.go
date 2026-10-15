@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	BlockSize = 4 * 1024 * 1024 // 4MB default block size for Electron integrity
+	BlockSize            = 4 * 1024 * 1024 // 4MB default block size for Electron integrity
+	UnpackedManifestFile = "_unpacked_manifest.json"
 )
 
 // IntegrityInfo holds SHA-256 integrity block hashes for Electron ASAR
@@ -187,6 +188,7 @@ func Extract(asarPath, destDir string) error {
 	defer f.Close()
 
 	unpackedDir := asarPath + ".unpacked"
+	var unpackedFiles []string
 
 	var extractEntry func(currentPath string, relPath string, entry *Entry) error
 	extractEntry = func(currentPath string, relPath string, entry *Entry) error {
@@ -205,6 +207,10 @@ func Extract(asarPath, destDir string) error {
 			return nil
 		}
 
+		if entry.Unpacked {
+			unpackedFiles = append(unpackedFiles, filepath.ToSlash(relPath))
+		}
+
 		return extractFileEntry(currentPath, relPath, unpackedDir, entry, f, payloadOffset)
 	}
 
@@ -219,16 +225,36 @@ func Extract(asarPath, destDir string) error {
 		}
 	}
 
+	// Persist list of unpacked files for seamless repack decoupling
+	if len(unpackedFiles) > 0 {
+		manifestBytes, _ := json.Marshal(unpackedFiles)
+		_ = os.WriteFile(filepath.Join(destDir, UnpackedManifestFile), manifestBytes, 0644)
+	}
+
 	return nil
 }
 
 type fileInfo struct {
-	relPath  string // Forward-slash normalized path relative to root
-	fullPath string
+	relPath    string // Forward-slash normalized path relative to root
+	fullPath   string
+	isUnpacked bool
 }
 
-// Pack packs a source directory into an ASAR file
+// Pack packs a source directory into an ASAR file with optional unpacked module decoupling
 func Pack(srcDir, asarPath string) error {
+	// 1. Read and consume unpacked manifest if exists
+	unpackedMap := make(map[string]bool)
+	manifestPath := filepath.Join(srcDir, UnpackedManifestFile)
+	if data, err := os.ReadFile(manifestPath); err == nil {
+		var list []string
+		if err := json.Unmarshal(data, &list); err == nil {
+			for _, item := range list {
+				unpackedMap[filepath.ToSlash(item)] = true
+			}
+		}
+		_ = os.Remove(manifestPath)
+	}
+
 	var files []fileInfo
 
 	err := filepath.WalkDir(srcDir, func(p string, d fs.DirEntry, err error) error {
@@ -244,9 +270,18 @@ func Pack(srcDir, asarPath string) error {
 			return err
 		}
 
+		normalizedRel := filepath.ToSlash(rel)
+		if normalizedRel == UnpackedManifestFile {
+			return nil
+		}
+
+		// Decouple native modules matching unpacked manifest or chrome-devtools-mcp
+		isUnpacked := unpackedMap[normalizedRel] || strings.Contains(strings.ToLower(normalizedRel), "chrome-devtools-mcp")
+
 		files = append(files, fileInfo{
-			relPath:  filepath.ToSlash(rel),
-			fullPath: p,
+			relPath:    normalizedRel,
+			fullPath:   p,
+			isUnpacked: isUnpacked,
 		})
 		return nil
 	})
@@ -272,18 +307,23 @@ func Pack(srcDir, asarPath string) error {
 		}
 
 		integrity := CalculateIntegrity(data)
-
 		parts := strings.Split(fi.relPath, "/")
 		curr := root
 		for i, part := range parts {
 			if i == len(parts)-1 {
 				// Leaf file
-				curr.Files[part] = &Entry{
+				entry := &Entry{
 					Size:      int64(len(data)),
-					Offset:    strconv.FormatInt(currentOffset, 10),
 					Integrity: integrity,
 				}
-				currentOffset += int64(len(data))
+				if fi.isUnpacked {
+					entry.Unpacked = true
+					// Offset is omitted for unpacked entries; bytes are not written to archive
+				} else {
+					entry.Offset = strconv.FormatInt(currentOffset, 10)
+					currentOffset += int64(len(data))
+				}
+				curr.Files[part] = entry
 			} else {
 				// Intermediate directory
 				if curr.Files[part] == nil {
@@ -338,8 +378,11 @@ func Pack(srcDir, asarPath string) error {
 		}
 	}
 
-	// Write all file payloads in order
+	// Write archive file payloads in order (skipping decoupled unpacked files)
 	for _, fi := range files {
+		if fi.isUnpacked {
+			continue
+		}
 		f, err := os.Open(fi.fullPath)
 		if err != nil {
 			return fmt.Errorf("failed to read payload file %s: %w", fi.fullPath, err)

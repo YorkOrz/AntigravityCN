@@ -6,6 +6,10 @@ export function ApplyPatch(arg1, arg2) {
   return window['go']['main']['App']['ApplyPatch'](arg1, arg2);
 }
 
+export function CleanAppCache() {
+  return window['go']['main']['App']['CleanAppCache']();
+}
+
 export function GetInitialState() {
   return window['go']['main']['App']['GetInitialState']();
 }
